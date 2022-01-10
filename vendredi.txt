@@ -1,0 +1,390 @@
+;***************************************************************************************
+; Auteur:     Thuc-An Truong
+;
+; Programme:  VENDREDI
+;
+;        Ce programme calcule la date du Vendredi saint a partir de la methode
+;        determinant la date de Paques, donnee par Spencer Jones (General Astronomy,
+;        p.67, ed. 1961), en demandant a l'utilisateur d'entrer une annee (AAAA) entre
+;        2000 et 2050 pour laquelle celui-ci desire connaitre la date du debut de ce
+;        long week-end de Paques.
+;
+;        La procedure afin de determiner la date de Paques est la suivante:
+;
+;        Diviser                  par     quotient    reste
+;
+;        l'annee(AAAA)            19      -----       a
+;        l'annee(AAAA)            100     b           c
+;        b                        4       d           e
+;        b + 8                    25      f           ----
+;        b - f + 1                3       g           ----
+;        19a + b - d - g + 15     30      ----        h
+;        c                        4       i           k
+;        32 + 2e + 2i - h - k     7       ----        q
+;        a + 11h + 22q            451     m           ----
+;        h + q - 7m + 114         31      n           p
+;
+;        n = numero du mois (3 = mars, 4 = avril)
+;        p + 1 = jour de la date de Paques
+;
+;        Dans notre cas, puisque Vendredi saint precede Paques de deux jours:
+;
+;        n = numero du mois (3 = mars, 4 = avril)
+;        p - 1 = jour de la date du Vendredi saint (ou -1 = 30 mars, 0 = 31 mars)
+;
+;***************************************************************************************
+
+;
+;Affiche le message de bienvenue au programme
+;
+intro:   STRO    msgBvn,d    
+
+;
+;Sollicite et valide l'annee entree par l'utilisateur
+;
+validAn: STRO    msgSol,d
+         DECI    anChoix,d
+         BREQ    fin         ;declenche la fin du programme si 0 est entre
+         LDA     anChoix,d
+         CPA     2000,i      ;erreur si l'annee entree est < 2000
+         BRLT    erreur      
+         CPA     2050,i      ;erreur si l'annee entree est > 2050
+         BRGT    erreur      
+         STA     a,d         ;necessaire au calcul de "a"
+         STA     c,d         ;necessaire au calcul de "c"
+         BR      calculA
+
+;
+;Affiche un message d'erreur lorsque l'annee entree par l'utilisateur est invalide
+;
+erreur:  STRO    msgErr,d 
+         BR      validAn
+
+;
+;Calcule "a", le reste du quotient "annee/19" 
+;
+calculA: LDA     a,d         ;dividende
+         CPA     19,i        ;division entiere seulement
+         BRLT    calculBC     
+         SUBA    19,i        ;diviseur
+         STA     a,d         ;reste
+         BR      calculA     
+  
+;
+;Calcule le quotient "b = annee/19" ainsi que "c", le reste
+;
+calculBC:LDA     c,d         ;dividende 
+         CPA     100,i       ;division entiere seulement
+         BRLT    calculDE 
+         SUBA    100,i       ;diviseur
+         STA     c,d         ;reste
+         STA     k,d         ;necessaire au calcul de "k"
+         LDA     b,d         ;quotient
+         ADDA    1,i
+         STA     b,d
+         STA     e,d         ;necessaire au calcul de "e"
+         BR      calculBC 
+
+;
+;Calcule le quotient "d = b/4" ainsi que "e", le reste
+;
+calculDE:LDA     e,d         ;dividende 
+         CPA     4,i         ;division entiere seulement
+         BRLT    numerF 
+         SUBA    4,i         ;diviseur
+         STA     e,d         ;reste
+         LDA     d,d         ;quotient
+         ADDA    1,i
+         STA     d,d
+         BR      calculDE
+
+;
+;Calcule le numerateur "f = (b+8)/25"
+;
+numerF:  LDA     b,d
+         ADDA    8,i
+         STA     resteF,d
+
+;
+;Calcule le quotient "f = (b+8)/25"
+;
+calculF: LDA     resteF,d    ;dividende
+         CPA     25,i        ;division entiere seulement
+         BRLT    numerG 
+         SUBA    25,i        ;diviseur
+         STA     resteF,d    ;reste
+         LDA     f,d         ;quotient
+         ADDA    1,i
+         STA     f,d
+         BR      calculF
+
+;
+;Calcule le numerateur "g = (b-f+1)/3"
+;
+numerG:  LDA     b,d
+         SUBA    f,d
+         ADDA    1,i
+         STA     resteG,d
+
+;
+;Calcule le quotient "g = (b-f+1)/3"
+;
+calculG: LDA     resteG,d    ;dividende
+         CPA     3,i         ;division entiere seulement
+         BRLT    numerH 
+         SUBA    3,i         ;diviseur
+         STA     resteG,d    ;reste
+         LDA     g,d         ;quotient
+         ADDA    1,i
+         STA     g,d
+         BR      calculG
+
+;
+;Calcule le numerateur "(19a+b-d-g+15)/30"
+;Multiplication par 19: "((((2*2)+1)*2)*2)-1" 
+;
+numerH:  LDA     a,d
+         ASLA                ;*2  
+         ASLA                ;*4
+         ADDA    a,d         ;*5
+         ASLA                ;*10
+         ASLA                ;*20
+         SUBA    a,d         ;*19
+         ADDA    b,d
+         SUBA    d,d
+         SUBA    g,d
+         ADDA    15,i
+         STA     h,d
+
+;
+;Calcule "h", le reste du quotient "(19a+b-d-g+15)/30" 
+;
+calculH: LDA     h,d         ;dividende
+         CPA     30,i        ;division entiere seulement
+         BRLT    calculIK 
+         SUBA    30,i        ;diviseur
+         STA     h,d         ;reste
+         BR      calculH 
+
+;
+;Calcule le quotient "i = c/4" ainsi que "k", le reste
+;
+calculIK:LDA     k,d         ;dividende 
+         CPA     4,i         ;division entiere seulement
+         BRLT    numerQ 
+         SUBA    4,i         ;diviseur
+         STA     k,d         ;reste
+         LDA     i,d         ;quotient
+         ADDA    1,i
+         STA     i,d
+         BR      calculIK
+
+;
+;Calcule le numerateur "(32+2e+2i-h-k)/7" 
+;
+numerQ:  LDA     e,d
+         ASLA                ;*2
+         ADDA    32,i
+         STA     q,d         
+         LDA     i,d
+         ASLA                ;*2
+         ADDA    q,d
+         STA     q,d         
+         SUBA    h,d
+         SUBA    k,d
+         STA     q,d
+
+;
+;Calcule "q", le reste du quotient "(32+2e+2i-h-k)/7" 
+;
+calculQ: LDA     q,d         ;dividende
+         CPA     7,i         ;division entiere seulement
+         BRLT    numerM 
+         SUBA    7,i         ;diviseur
+         STA     q,d         ;reste
+         BR      calculQ 
+    
+;
+;Calcule le numerateur "m = (a+11h+22q)/451"
+;Multiplication par 11: "(((2*2)+1)*2)+1"
+;Multiplication par 22: "((((2*2)+1)*2)+1)*2"
+;     
+numerM:  LDA     h,d 
+         ASLA                ;*2
+         ASLA                ;*4
+         ADDA    h,d         ;*5
+         ASLA                ;*10
+         ADDA    h,d         ;*11
+         ADDA    a,d 
+         STA     resteM,d     
+         LDA     q,d
+         ASLA                ;*2
+         ASLA                ;*4
+         ADDA    q,d         ;*5
+         ASLA                ;*10
+         ADDA    q,d         ;*11
+         ASLA                ;*22
+         ADDA    resteM,d
+         STA     resteM,d
+
+;
+;Calcule le quotient "m = (a+11h+22q)/451" 
+;
+calculM: LDA     resteM,d    ;dividende
+         CPA     451,i       ;division entiere seulement
+         BRLT    numerN 
+         SUBA    451,i       ;diviseur
+         STA     resteM,d    ;reste
+         LDA     m,d         ;quotient
+         ADDA    1,i
+         STA     m,d
+         BR      calculM
+
+;
+;Calcule le numerateur "n = (h+q-7m+114)/31" 
+;Multiplication par 7: "(2*2*2)-1"
+;
+numerN:  LDA     m,d
+         ASLA                ;*2
+         ASLA                ;*2
+         ASLA                ;*2
+         SUBA    m,d         ;*7
+         NEGA                ;equivalent a une soustraction 
+         ADDA    h,d
+         ADDA    q,d
+         ADDA    114,i
+         STA     p,d
+
+;
+;Calcule le quotient "n = (h+q-7m+114)/31" ainsi que "p", le reste
+;
+calculNP:LDA     p,d         ;dividende
+         CPA     31,i        ;division entiere seulement
+         BRLT    validDat 
+         SUBA    31,i        ;diviseur
+         STA     p,d         ;reste
+         LDA     n,d         ;quotient
+         ADDA    1,i
+         STA     n,d
+         BR      calculNP 
+
+;
+;Calcule et valide le jour et le mois du Vendredi saint
+;
+validDat:STRO    msgVendr,d 
+         LDA     p,d
+         SUBA    1,i         ;"jour du Vendredi saint = p-1"
+         CPA     -1,i        ;Vendredi saint est le 30 mars
+         BREQ    affJr30 
+         CPA     0,i         ;Vendredi saint est le 31 mars
+         BREQ    affJr31 
+         STA     jrVendr,d
+         DECO    jrVendr,d
+         LDA     n,d         
+         CPA     3,i         ;"n = 3 = mars"
+         BREQ    affMars
+         BR      affAvril    ;Sinon, avril
+
+;
+;Affiche le jour 30 de la date du Vendredi saint
+;         
+affJr30: LDA     30,i
+         STA     jrVendr,d
+         DECO    jrVendr,d
+         BR      affMars
+ 
+;
+;Affiche le jour 31 de la date du Vendredi saint
+;         
+affJr31: LDA     31,i
+         STA     jrVendr,d
+         DECO    jrVendr,d
+         BR      affMars
+
+;
+;Affiche le mois de mars de la date du Vendredi saint
+;
+affMars: STRO    mars,d
+         BR      affAnnee
+
+;
+;Affiche le mois d'avril de la date du Vendredi saint
+;
+affAvril:STRO    avril,d
+         BR      affAnnee
+
+;
+;Affiche l'annee de la date du Vendredi saint
+;
+affAnnee:DECO    anChoix,d
+         CHARO   '.',i
+         BR      reinit
+
+;
+;Reinitialise les variables a 0 pour les calculs suivants
+;  
+reinit:  LDA     0,i
+         STA     a,d
+         STA     b,d
+         STA     c,d
+         STA     d,d
+         STA     e,d
+         STA     f,d
+         STA     g,d
+         STA     h,d
+         STA     i,d
+         STA     k,d
+         STA     m,d
+         STA     n,d
+         STA     p,d
+         STA     q,d
+         BR      validAn
+
+;
+;Termine le programme lorsque l'utilisateur entre 0
+;        
+fin:     STRO    msgFin,d
+         STOP
+
+;***************************************************************************************
+; Constantes
+;***************************************************************************************
+
+msgBvn:  .ASCII  "Bienvenue a ce programme de calcul de la date du"
+         .ASCII  "\nVendredi saint.\x00"
+msgSol:  .ASCII  "\n\nVeuillez entrer une annee entre 2000 et 2050 sous"
+         .ASCII  "\nle format AAAA (ou 0 pour terminer le programme):\n\n\x00"
+msgErr:  .ASCII  "\nErreur: l'annee entree est invalide.\x00"
+msgFin:  .ASCII  "\nFin normale du programme.\x00"
+msgVendr:.ASCII  "\n- Vendredi saint est le \x00"
+
+mars:    .ASCII  " mars \x00"
+avril:   .ASCII  " avril \x00"
+
+;***************************************************************************************
+; Variables
+;***************************************************************************************
+
+anChoix: .BLOCK  2           ;variable pour l'annee entree par l'utilisateur
+jrVendr: .BLOCK  2           ;variable pour le jour de la date du Vendredi saint
+
+a:       .BLOCK  2           ;variable pour le reste de:              anChoix/19
+b:       .BLOCK  2           ;variable pour le quotient entier:       anChoix/100
+c:       .BLOCK  2           ;variable pour le reste de:              b
+d:       .BLOCK  2           ;variable pour le quotient entier:       b/4 
+e:       .BLOCK  2           ;variable pour le reste de:              d
+f:       .BLOCK  2           ;variable pour le quotient entier de:    (b+8)/25
+g:       .BLOCK  2           ;variable pour le quotient entier de:    (b-f+1)/3
+h:       .BLOCK  2           ;variable pour le reste de:              (19a+b-d-g+15)/30
+i:       .BLOCK  2           ;variable pour le quotient entier de:    c/4
+k:       .BLOCK  2           ;variable pour le reste de:              i
+m:       .BLOCK  2           ;variable pour le quotient de:           (a+11h+22q)/451
+n:       .BLOCK  2           ;variable pour le quotient de:           (h+q-7m+114)/31
+p:       .BLOCK  2           ;variable pour le reste de:              n 
+q:       .BLOCK  2           ;variable pour le reste de:              (32+2e+2i-h-k)/7
+
+resteF:  .BLOCK  2           ;variable pour le reste de division de: f
+resteG:  .BLOCK  2           ;variable pour le reste de division de: g
+resteM:  .BLOCK  2           ;variable pour le reste de division de: m
+
+.END
